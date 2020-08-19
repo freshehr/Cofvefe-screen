@@ -18,14 +18,15 @@ import axios from "axios";
 
 
 const Symptoms: React.FC = () => {
-
     const Symptoms = {
+        clinicalAuthor: "qwqwe",
         coughCode : "at0.3",
         dateOfOnset : "2020-03-01",
         feverCode :"at0.3",
         breathingCode : "at0.3",
         throatCode : "at0.3",
     };
+
 
     const targetComposition = () => {
        return {
@@ -73,15 +74,24 @@ const Symptoms: React.FC = () => {
        // console.log(`endpoint: ${endpoint}`) ;
 
         const postComposition = async () =>{
-            const result =  await axios({
-                url: endpoint,
-                method: 'post',
-                headers: {Authorization: apiKEY, contentType: 'application/json'},
-                data: targetComposition()
-            });
-            setCompositionId(result.data.compositionUid);
+            try {
+                const result =  await axios({
+                    url: endpoint,
+                    method: 'post',
+                    headers: {Authorization: apiKEY, contentType: 'application/json'},
+                    data: targetComposition()
+                });
+                setCompositionId(result.data.compositionUid);
 
-            console.log(`compositionId: ${compositionId}`) ;
+                console.log(`compositionId: ${compositionId}`) ;
+            } catch (err) {
+                console.log(JSON.stringify(err.response));
+                throw new Error('Unable to post Composition: ' + err.response.data);
+
+            }
+
+
+
 
         };
 
@@ -102,7 +112,10 @@ const Symptoms: React.FC = () => {
       <IonContent>
           <IonItem>
               <IonLabel>Onset of symptoms</IonLabel>
-              <IonDatetime displayFormat="DD MMM YY" placeholder="Select Date"/>
+              <IonDatetime displayFormat="DD MMM YY"
+                           placeholder="Select Date"
+                           onIonChange={ (e) => {
+                               Symptoms.dateOfOnset = (e.target as HTMLInputElement).value }}/>
           </IonItem>
           <IonList>
               <IonRadioGroup value="fever">

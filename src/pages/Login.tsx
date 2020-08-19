@@ -1,47 +1,68 @@
 import React from 'react';
+import CDRService from "../services/CDRService";
+import { Query } from 'react-apollo';
+import { gql } from 'apollo-boost';
+import {CdrTemplates} from "./templates";
+
 import {
-    IonButton, IonCard, IonCardContent, IonCardHeader, IonCardSubtitle,
-    IonContent, IonHeader, IonInput, IonItem, IonLabel, IonList, IonPage, IonTitle, IonToolbar
+    IonButton,
+    IonCard,
+    IonCardContent,
+    IonCardHeader,
+    IonCardSubtitle,
+    IonContent,
+    IonHeader,
+    IonInput,
+    IonItem,
+    IonLabel,
+    IonList,
+    IonPage,
+    IonSelect,
+    IonSelectOption,
+    IonTitle,
+    IonToolbar
 } from '@ionic/react';
 
 import './Login.css';
-import axios from 'axios';
+
+
+const cdr =new CDRService(undefined);
+
 
 const Login: React.FC = () => {
 
-    const apiKEY = "Basic YmIyNjRiY2UtYzQwNy00OTgyLTkwMTctOTdkMzcyN2ZjZmE0OiQyYSQxMCQ2MTlraQ==";
-    const [data, setData] = React.useState({ehrId: ''} );
+    const [cdrName, setCDRName] = React.useState(undefined);
+
+    const [ehrId, setEhrId] = React.useState('' );
     const [subjectId, setSubjectId] = React.useState('9999999000');
-    const [endpoint, setEndpoint] = React.useState('');
-    const [templates, setTemplates] = React.useState([]);
+    const [subjectNamespace, setSubjectNamespace] = React.useState('uk.nhs.nhs_number');
+    //const [templates, setTemplates] = React.useState([]);
+
+
+
+    const findEhrId = () => {
+
+        const getEhrIdFromSubjectId = async () =>{
+            const result =  await cdr.findEhrIdBySubjectId(subjectId,subjectNamespace);
+            setEhrId(result)
+        };
+
+        if (cdrName && subjectId) getEhrIdFromSubjectId().then();
+
+    }
 
    React.useEffect(() => {
 
-    console.log(`subjectId: ${subjectId}`) ;
-    console.log(`endpoint: ${endpoint}`) ;
+        console.log(cdrName);
 
-       const getEhrIdFromSubjectId = async () =>{
-           const result =  await axios({
-               url: endpoint,
-               method: 'get',
-               headers: {Authorization: apiKEY, contentType: 'application/json'},
-           });
-           setData(result.data)
-       };
+        cdr.setActiveCDR(cdrName);
 
-       const getTemplates = async () =>{
-           const result =  await axios({
-               url: 'https://cdr.code4health.org/rest/v1/template',
-               method: 'get',
-               headers: {Authorization: apiKEY, contentType: 'application/json'},
-           });
-           setTemplates(result.data.templates)
-       };
 
-       getEhrIdFromSubjectId();
-       getTemplates();
+    },[cdrName]);
 
-    }, [endpoint]);
+
+
+
 
 
     return (
@@ -49,12 +70,21 @@ const Login: React.FC = () => {
             <IonHeader>
                 <IonToolbar>
                     <IonTitle>NHS Login</IonTitle>
+                    <IonItem>
+                        <IonLabel>CDR</IonLabel>
+                        <IonSelect value={cdr.config.name}
+                                   placeholder="Select CDR"
+                                   onIonChange={ e => setCDRName(e.detail.value) }>
+                            <IonSelectOption value="c4h">C4H</IonSelectOption>
+                            <IonSelectOption value="EhrBase">EhrBase</IonSelectOption>
+                        </IonSelect>
+                    </IonItem>
                 </IonToolbar>
             </IonHeader>
             <IonContent>
                 <IonCard>
                     <IonCardHeader color="primary">
-                        <IonCardSubtitle>subjectID to ehrID</IonCardSubtitle>
+                        <IonCardSubtitle>subject to ehrID</IonCardSubtitle>
                     </IonCardHeader>
                     <IonCardContent>
                         When you press the login button, a call is made to the openEHR CDR to get the patient's internal
@@ -66,24 +96,24 @@ const Login: React.FC = () => {
                             <IonLabel>NHS Number</IonLabel>
                             <IonInput
                                 type="text"
-                                onIonChange={(e) => setSubjectId((e.target as HTMLInputElement).value)}
-                            />
-
-                            <IonButton
-                                type="submit"
-                                color="primary"
-                                slot="end"
-                                onClick={() =>
-                                    setEndpoint(`https://cdr.code4health.org/rest/v1/ehr/?subjectId=${subjectId}&subjectNamespace=uk.nhs.nhs_number`)
+                                value = {subjectId}
+                                onIonChange={(e) => {
+                                       setSubjectId((e.target as HTMLInputElement).value);
+                                    }
                                 }
-                            >
-                                Login
-                            </IonButton>
+                            />
+                        <IonButton
+                            disabled = { !cdrName }
+                            onClick={ (e) => {findEhrId(); }
+                        }>
+                            Select
+                        </IonButton>
                         </IonItem>
+
                     </IonCardContent>
                     <IonCardContent>
-                        <IonItem key={data.ehrId}>
-                            <IonLabel>EhrId : {data.ehrId} </IonLabel>
+                        <IonItem key={ehrId}>
+                            <IonLabel>EhrId : {ehrId} </IonLabel>
                         </IonItem>
                     </IonCardContent>
                 </IonCard>
@@ -91,17 +121,24 @@ const Login: React.FC = () => {
                     <IonCardHeader color="primary">
                         <IonCardSubtitle>List of templates</IonCardSubtitle>
                     </IonCardHeader>
-                            <IonList color="primary">
-                                {
-                                    templates.map(template => {
-                                        return (
-                                            <IonItem key={template['templateId']}>
-                                                {template['templateId']}
-                                            </IonItem>
-                                        );
-                                    })
-                                }
-                            </IonList>
+                    <IonList color="primary">
+                        {
+
+                            if (this.cdrName)
+                        {
+                            CdrTemplates(  (template: any) =>
+
+                        {
+                            return <IonItem key={template['templateId']}>
+                            {template['templateId']}
+                            </IonItem>}
+
+                            )
+                        }
+
+
+                        }
+                    </IonList>
                 </IonCard>
             </IonContent>
         </IonPage>
